@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Template Generator by Akashdip — Petpooja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-logo-wrap"><img src="assets/pp-logo.png" alt="Petpooja" class="brand-logo"></span>
+      <div class="brand-text">
+        <span class="brand-title">Template Generator by Akashdip</span>
+        <span class="brand-sub">Merchant Training &amp; Technical Support</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="ticket-clock" id="clock"></span>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <section class="panel form-panel">
+      <div class="panel-inner">
+
+        <label class="field-label" for="templatePicker">Select response template</label>
+        <select id="templatePicker" class="template-select"></select>
+        <p class="picker-hint">Selecting a template opens it in a new tab — this tab stays untouched.</p>
+        <p class="template-meta" id="templateMeta"></p>
+
+        <form id="dynamicForm" class="dynamic-form" autocomplete="off"></form>
+
+      </div>
+    </section>
+
+    <section class="panel preview-panel">
+      <div class="panel-inner">
+
+        <div class="stub" id="stub">
+          <div class="stub-head">
+            <span class="stub-eyebrow" id="stubEyebrow">TEMPLATE 00</span>
+            <span class="stamp" id="stamp">ACK</span>
+          </div>
+          <div class="stub-title" id="stubTitle">Template title</div>
+          <div class="stub-divider"></div>
+          <pre class="stub-body" id="previewBody"></pre>
+          <div class="stub-perf" aria-hidden="true"></div>
+        </div>
+
+        <div class="preview-actions">
+          <button type="button" id="copyBtn" class="btn btn-primary">Copy to clipboard</button>
+          <button type="button" id="resetBtn" class="btn btn-ghost">Reset fields</button>
+          <span class="copy-toast" id="copyToast">Copied</span>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footbar">
+    <span>Templates are generated locally in your browser — nothing is uploaded or stored.</span>
+    <span class="footbar-sep">·</span>
+    <a href="manager.html" class="footbar-link">+ Add / manage templates</a>
+    <br>
+    <span>Found a bug or have feedback? Kindly mail us at <a href="mailto:akashdip.ghosh1@petpooja.com" class="footbar-link">akashdip.ghosh1@petpooja.com</a></span>
+  </footer>
+
+</div>
+
+<script src="templates.js"></script>
+<script src="engine.js"></script>
+<script src="customTemplates.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Template Manager — Template Generator by Akashdip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="manager.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-logo-wrap"><img src="assets/pp-logo.png" alt="Petpooja" class="brand-logo"></span>
+      <div class="brand-text">
+        <span class="brand-title">Template Manager</span>
+        <span class="brand-sub">Add, edit and export your own response templates</span>
+      </div>
+    </div>
+    <a href="index.html" class="btn btn-ghost topbar-back">← Back to composer</a>
+  </header>
+
+  <main class="mgr-layout">
+
+    <section class="panel mgr-list-panel">
+      <div class="panel-inner">
+        <label class="field-label">Your custom templates</label>
+        <div id="templateList" class="mgr-list"></div>
+        <button type="button" id="newTemplateBtn" class="btn btn-primary mgr-new-btn">+ New template</button>
+
+        <div class="mgr-divider"></div>
+
+        <label class="field-label">Import / export</label>
+        <p class="template-meta" style="margin-bottom:10px;">
+          Export downloads <code>customTemplates.js</code> — replace the file of
+          the same name in both your web app and extension folders to publish
+          your changes there.
+        </p>
+        <button type="button" id="exportBtn" class="btn btn-ghost mgr-full-btn">Export customTemplates.js</button>
+        <label class="btn btn-ghost mgr-full-btn mgr-file-label">
+          Import customTemplates.js
+          <input type="file" id="importFile" accept=".js" hidden>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel mgr-editor-panel">
+      <div class="panel-inner">
+
+        <div id="editorEmpty" class="mgr-empty">
+          <p>Select a template on the left to edit it, or create a new one.</p>
+        </div>
+
+        <form id="editorForm" class="mgr-form" style="display:none;">
+
+          <div class="mgr-row">
+            <div class="field-group">
+              <label class="field-label">Title</label>
+              <input type="text" id="fTitle" placeholder="e.g. Refund Confirmation">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Stamp label</label>
+              <input type="text" id="fStamp" placeholder="e.g. REFUNDED" maxlength="14">
+            </div>
+          </div>
+
+          <div class="mgr-row">
+            <div class="field-group">
+              <label class="field-label">When to use</label>
+              <input type="text" id="fWhenToUse" placeholder="One line describing the trigger for this template">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Stamp color</label>
+              <select id="fStampColor">
+                <option value="teal">Teal (confirmation)</option>
+                <option value="amber">Amber (pending / caution)</option>
+                <option value="rust">Rust (escalation / negative)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Audience</label>
+            <input type="text" id="fAudience" placeholder="e.g. Customer, or Internal — Training Team">
+          </div>
+
+          <div class="mgr-divider"></div>
+
+          <label class="field-label">Fields</label>
+          <div id="fieldsList" class="mgr-fields-list"></div>
+          <button type="button" id="addFieldBtn" class="btn btn-ghost mgr-full-btn">+ Add field</button>
+
+          <div class="mgr-divider"></div>
+
+          <label class="field-label">Email body</label>
+          <p class="field-hint mgr-cheatsheet">
+            <b>{{fieldId}}</b> inserts a field's value · <b>**bold**</b> ·
+            <b>==highlight==</b> · wrap optional lines in
+            <b>{{if fieldId}} ... {{/if}}</b> · a checklist field's picks
+            appear via <b>{{checklist:fieldId}}</b> on its own line.
+          </p>
+          <textarea id="fBody" rows="14" placeholder="Dear Customer,
+
+Greetings from Petpooja!
+
+..."></textarea>
+
+          <div class="mgr-actions">
+            <button type="button" id="saveBtn" class="btn btn-primary">Save template</button>
+            <button type="button" id="deleteBtn" class="btn btn-ghost mgr-danger">Delete</button>
+          </div>
+
+        </form>
+
+      </div>
+    </section>
+
+    <section class="panel mgr-preview-panel">
+      <div class="panel-inner">
+        <label class="field-label">Live preview</label>
+        <div id="previewFormHost" class="mgr-preview-form"></div>
+        <div class="stub" id="stub">
+          <div class="stub-head">
+            <span class="stub-eyebrow" id="stubEyebrow">PREVIEW</span>
+            <span class="stamp" id="stamp">STAMP</span>
+          </div>
+          <div class="stub-title" id="stubTitle">Template title</div>
+          <div class="stub-divider"></div>
+          <pre class="stub-body" id="previewBody"></pre>
+          <div class="stub-perf" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+</div>
+
+<script src="templates.js"></script>
+<script src="engine.js"></script>
+<script src="customTemplates.js"></script>
+<script src="manager.js"></script>
+</body>
+</html>
