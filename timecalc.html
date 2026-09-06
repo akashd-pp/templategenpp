@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Calculator — Template Generator by Akashdip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .calc-layout{
+    max-width:520px;
+    margin:0 auto;
+    padding:32px 24px;
+  }
+  .calc-card{
+    background:var(--paper-card);
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    padding:24px;
+  }
+  .calc-row{
+    display:flex;
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .calc-row > div{flex:1;}
+  .calc-duration-row{
+    display:flex;
+    gap:12px;
+    align-items:flex-end;
+  }
+  .calc-duration-row > div{flex:1;}
+  .calc-result{
+    margin-top:20px;
+    padding:18px 20px;
+    background:var(--teal-bg);
+    border:1.5px solid var(--teal);
+    border-radius:10px;
+    text-align:center;
+  }
+  .calc-result-time{
+    font-family:var(--font-mono);
+    font-size:22px;
+    font-weight:600;
+    color:var(--teal);
+  }
+  .calc-result-sub{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+  .calc-summary{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-top:10px;
+  }
+  .calc-actions{
+    display:flex;
+    justify-content:center;
+    margin-top:16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <a href="index.html" class="brand" style="text-decoration:none;">
+      <span class="brand-logo-wrap"><img src="assets/pp-logo.png" alt="Petpooja" class="brand-logo"></span>
+      <div class="brand-text">
+        <span class="brand-title">Time Calculator</span>
+        <span class="brand-sub">Start time + duration → end time</span>
+      </div>
+    </a>
+    <a href="index.html" class="btn btn-ghost topbar-back">← Back to composer</a>
+  </header>
+
+  <main class="calc-layout">
+    <div class="calc-card">
+
+      <label class="field-label" for="startTime">Start time</label>
+      <input type="time" id="startTime">
+
+      <div style="height:16px;"></div>
+
+      <label class="field-label">Duration</label>
+      <div class="calc-duration-row">
+        <div>
+          <label class="field-label" for="durHours" style="text-transform:none;font-weight:400;">Hours</label>
+          <input type="number" id="durHours" min="0" max="99" value="0">
+        </div>
+        <div>
+          <label class="field-label" for="durMinutes" style="text-transform:none;font-weight:400;">Minutes</label>
+          <input type="number" id="durMinutes" min="0" max="59" value="0">
+        </div>
+      </div>
+
+      <div class="calc-result" id="calcResult" style="display:none;">
+        <div class="calc-result-time" id="calcEndTime"></div>
+        <div class="calc-result-sub" id="calcDayNote"></div>
+        <div class="calc-summary" id="calcSummary"></div>
+      </div>
+
+      <div class="calc-actions">
+        <button type="button" id="copyResultBtn" class="btn btn-primary" style="display:none;">Copy result</button>
+        <span class="copy-toast" id="copyToast">Copied</span>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+(function(){
+  const startTimeEl = document.getElementById('startTime');
+  const durHoursEl = document.getElementById('durHours');
+  const durMinutesEl = document.getElementById('durMinutes');
+  const resultBox = document.getElementById('calcResult');
+  const endTimeEl = document.getElementById('calcEndTime');
+  const dayNoteEl = document.getElementById('calcDayNote');
+  const summaryEl = document.getElementById('calcSummary');
+  const copyBtn = document.getElementById('copyResultBtn');
+  const copyToast = document.getElementById('copyToast');
+
+  function fmt12(totalMinutes){
+    const m = ((totalMinutes % 1440) + 1440) % 1440;
+    let h = Math.floor(m / 60);
+    const min = m % 60;
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if(h === 0) h = 12;
+    return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')} ${suffix}`;
+  }
+
+  function calculate(){
+    const startVal = startTimeEl.value;
+    if(!startVal){
+      resultBox.style.display = 'none';
+      copyBtn.style.display = 'none';
+      return;
+    }
+    const [sh, sm] = startVal.split(':').map(Number);
+    const startTotal = sh * 60 + sm;
+    const hrs = parseInt(durHoursEl.value, 10) || 0;
+    const mins = parseInt(durMinutesEl.value, 10) || 0;
+    const durationTotal = hrs * 60 + mins;
+    const endTotal = startTotal + durationTotal;
+    const daysCrossed = Math.floor(endTotal / 1440);
+
+    const startFmt = fmt12(startTotal);
+    const endFmt = fmt12(endTotal);
+
+    endTimeEl.textContent = endFmt;
+    dayNoteEl.textContent = daysCrossed > 0
+      ? `(+${daysCrossed} day${daysCrossed > 1 ? 's' : ''} — crosses midnight)`
+      : '';
+    const durationLabel = (hrs ? `${hrs} hr ` : '') + (mins || !hrs ? `${mins} min` : '');
+    summaryEl.textContent = `${startFmt} + ${durationLabel.trim()} = ${endFmt}`;
+
+    resultBox.style.display = 'block';
+    copyBtn.style.display = 'inline-block';
+
+    copyBtn.dataset.copyText = `${startFmt} – ${endFmt}`;
+  }
+
+  function copyResult(){
+    const text = copyBtn.dataset.copyText || '';
+    const done = () => {
+      copyToast.classList.add('show');
+      setTimeout(() => copyToast.classList.remove('show'), 1600);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+  function fallbackCopy(text, done){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+
+  startTimeEl.addEventListener('input', calculate);
+  durHoursEl.addEventListener('input', calculate);
+  durMinutesEl.addEventListener('input', calculate);
+  copyBtn.addEventListener('click', copyResult);
+})();
+</script>
+</body>
+</html>

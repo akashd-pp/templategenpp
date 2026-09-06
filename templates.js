@@ -381,13 +381,25 @@ const TEMPLATES = [
     {id:'call2Time', label:'Call 2 — time (optional)', type:'time'},
     {id:'call2Result', label:'Call 2 — result (optional)', type:'select',
       options:['','No Answer','Busy','Switched Off','Call Declined','Ringing – No Answer','Invalid Number']},
+    {id:'call3Date', label:'Call 3 — date (optional)', type:'date'},
+    {id:'call3Time', label:'Call 3 — time (optional)', type:'time'},
+    {id:'call3Result', label:'Call 3 — result (optional)', type:'select',
+      options:['','No Answer','Busy','Switched Off','Call Declined','Ringing – No Answer','Invalid Number']},
+    {id:'call4Date', label:'Call 4 — date (optional)', type:'date'},
+    {id:'call4Time', label:'Call 4 — time (optional)', type:'time'},
+    {id:'call4Result', label:'Call 4 — result (optional)', type:'select',
+      options:['','No Answer','Busy','Switched Off','Call Declined','Ringing – No Answer','Invalid Number']},
     {id:'whatsappStatus', label:'WhatsApp status', type:'select',
       options:['Sent','Delivered','Read','Not Sent','Not Applicable']}
   ],
   generate(v){
-    const call2 = (v.call2Date || v.call2Time || v.call2Result)
-      ? mixed(seg('Call 2:', {bold:true, mark:'yellow'}), seg(` ${fmtDate(v.call2Date)} – ${fmtTime(v.call2Time)} – ${val(v.call2Result,'—')}`, {mark:'yellow'}))
-      : null;
+    function callLine(n, date, time, result){
+      if(!(date || time || result)) return null;
+      return mixed(seg(`Call ${n}:`, {bold:true, mark:'yellow'}), seg(` ${fmtDate(date)} – ${fmtTime(time)} – ${val(result,'—')}`, {mark:'yellow'}));
+    }
+    const call2 = callLine(2, v.call2Date, v.call2Time, v.call2Result);
+    const call3 = callLine(3, v.call3Date, v.call3Time, v.call3Result);
+    const call4 = callLine(4, v.call4Date, v.call4Time, v.call4Result);
     return join([
       plainLine('Dear Customer,'),
       plainLine(''),
@@ -402,6 +414,8 @@ const TEMPLATES = [
       plainLine('Attempts made (attach evidence)'),
       mixed(seg('Call 1:', {bold:true, mark:'yellow'}), seg(` ${fmtDate(v.call1Date)} – ${fmtTime(v.call1Time)} – ${val(v.call1Result,'—')}`, {mark:'yellow'})),
       call2,
+      call3,
+      call4,
       mixed(seg('WhatsApp:', {bold:true, mark:'yellow'}), seg(` ${val(v.whatsappStatus,'—')}`, {mark:'yellow'}))
     ]);
   }
@@ -729,7 +743,8 @@ const TEMPLATES = [
       options:['Attendo-Regular','Attendo-Face','Attendo-DS','POSS','Invoice','WCD','TASK','Reservation Manager','Petpooja EDC']},
     {id:'orgName', label:'Restaurant / organization name', type:'text'},
     {id:'trainingMode', label:'Training mode', type:'select', options:['Onsite','Online']},
-    {id:'alternateDateTime', label:'Alternate date & time — optional', type:'text', placeholder:'e.g. tomorrow 4 PM'},
+    {id:'alternateDate', label:'Alternate date — optional', type:'date'},
+    {id:'alternateTime', label:'Alternate time — optional', type:'time'},
     {id:'includePrereqCheck', label:'Include prerequisites check line', type:'checkbox', default:true}
   ],
   generate(v){
@@ -743,6 +758,10 @@ const TEMPLATES = [
     } else {
       prereqLine = 'System, Network (LAN connections), Printer, Staffs are ready & available?';
     }
+    const altParts = [];
+    if(v.alternateDate) altParts.push(fmtDate(v.alternateDate));
+    if(v.alternateTime) altParts.push(fmtTime(v.alternateTime));
+    const altText = altParts.length ? altParts.join(', ') : '';
     return join([
       plainLine('Namaste,'),
       plainLine(''),
@@ -753,7 +772,7 @@ const TEMPLATES = [
       plainLine(`This is regarding ${val(v.product,'[Product]')} training for ${val(v.orgName,'[Restaurant/Organization Name]')}`),
       plainLine(`Training mode: ${val(v.trainingMode,'Onsite')}`),
       plainLine(''),
-      plainLine(`Let me know your availability today${v.alternateDateTime ? ' or ' + v.alternateDateTime : ''}.`),
+      plainLine(`Let me know your availability today${altText ? ' or ' + altText : ''}.`),
       line(v.includePrereqCheck !== false, plainLine('')),
       line(v.includePrereqCheck !== false, plainLine(prereqLine)),
       plainLine(''),
