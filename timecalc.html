@@ -26,12 +26,18 @@
     margin-bottom:16px;
   }
   .calc-row > div{flex:1;}
-  .calc-duration-row{
-    display:flex;
-    gap:12px;
-    align-items:flex-end;
+  .calc-minutes-grid{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:8px;
   }
-  .calc-duration-row > div{flex:1;}
+  .calc-minutes-grid input{
+    text-align:center;
+    padding:8px 4px;
+  }
+  @media (max-width: 480px){
+    .calc-minutes-grid{grid-template-columns:repeat(3, 1fr);}
+  }
   .calc-result{
     margin-top:20px;
     padding:18px 20px;
@@ -88,17 +94,13 @@
 
       <div style="height:16px;"></div>
 
-      <label class="field-label">Duration</label>
-      <div class="calc-duration-row">
-        <div>
-          <label class="field-label" for="durHours" style="text-transform:none;font-weight:400;">Hours</label>
-          <input type="number" id="durHours" min="0" max="99" value="0">
-        </div>
-        <div>
-          <label class="field-label" for="durMinutes" style="text-transform:none;font-weight:400;">Minutes</label>
-          <select id="durMinutes"></select>
-        </div>
-      </div>
+      <label class="field-label" for="durHours">Hours</label>
+      <input type="number" id="durHours" min="0" max="99" value="0">
+
+      <div style="height:16px;"></div>
+
+      <label class="field-label">Minutes (add multiple call segments — e.g. 12 + 15 + 8)</label>
+      <div class="calc-minutes-grid" id="minutesGrid"></div>
 
       <div class="calc-result" id="calcResult" style="display:none;">
         <div class="calc-result-time" id="calcEndTime"></div>
@@ -120,7 +122,7 @@
 (function(){
   const startTimeEl = document.getElementById('startTime');
   const durHoursEl = document.getElementById('durHours');
-  const durMinutesEl = document.getElementById('durMinutes');
+  const minutesGrid = document.getElementById('minutesGrid');
   const resultBox = document.getElementById('calcResult');
   const endTimeEl = document.getElementById('calcEndTime');
   const dayNoteEl = document.getElementById('calcDayNote');
@@ -128,12 +130,17 @@
   const copyBtn = document.getElementById('copyResultBtn');
   const copyToast = document.getElementById('copyToast');
 
-  // Populate minutes as clean 5-minute steps (0, 5, 10, ..., 55)
-  for(let m = 0; m <= 55; m += 5){
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = String(m).padStart(2,'0');
-    durMinutesEl.appendChild(opt);
+  const MINUTE_FIELD_COUNT = 5;
+  const minuteInputs = [];
+  for(let i = 0; i < MINUTE_FIELD_COUNT; i++){
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.max = '999';
+    input.placeholder = '--';
+    input.className = 'calc-minute-input';
+    minutesGrid.appendChild(input);
+    minuteInputs.push(input);
   }
 
   function fmt12(totalMinutes){
@@ -155,8 +162,9 @@
     const [sh, sm] = startVal.split(':').map(Number);
     const startTotal = sh * 60 + sm;
     const hrs = parseInt(durHoursEl.value, 10) || 0;
-    const mins = parseInt(durMinutesEl.value, 10) || 0;
-    const durationTotal = hrs * 60 + mins;
+    const minuteValues = minuteInputs.map(inp => parseInt(inp.value, 10) || 0);
+    const minsSum = minuteValues.reduce((a, b) => a + b, 0);
+    const durationTotal = hrs * 60 + minsSum;
     const endTotal = startTotal + durationTotal;
     const daysCrossed = Math.floor(endTotal / 1440);
 
@@ -167,8 +175,13 @@
     dayNoteEl.textContent = daysCrossed > 0
       ? `(+${daysCrossed} day${daysCrossed > 1 ? 's' : ''} — crosses midnight)`
       : '';
-    const durationLabel = (hrs ? `${hrs} hr ` : '') + (mins || !hrs ? `${mins} min` : '');
-    summaryEl.textContent = `${startFmt} + ${durationLabel.trim()} = ${endFmt}`;
+    const filledMinutes = minuteValues.filter(v => v > 0);
+    const minutesBreakdown = filledMinutes.length > 1 ? filledMinutes.join('+') + ' min' : (minsSum ? `${minsSum} min` : '');
+    const durationParts = [];
+    if(hrs) durationParts.push(`${hrs} hr`);
+    if(minutesBreakdown) durationParts.push(minutesBreakdown);
+    const durationLabel = durationParts.length ? durationParts.join(' ') : '0 min';
+    summaryEl.textContent = `${startFmt} + ${durationLabel} = ${endFmt}`;
 
     resultBox.style.display = 'block';
     copyBtn.style.display = 'inline-block';
@@ -201,7 +214,7 @@
 
   startTimeEl.addEventListener('input', calculate);
   durHoursEl.addEventListener('input', calculate);
-  durMinutesEl.addEventListener('change', calculate);
+  minuteInputs.forEach(inp => inp.addEventListener('input', calculate));
   copyBtn.addEventListener('click', copyResult);
 })();
 </script>
