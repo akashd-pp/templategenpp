@@ -96,7 +96,7 @@
         </div>
         <div>
           <label class="field-label" for="durMinutes" style="text-transform:none;font-weight:400;">Minutes</label>
-          <input type="number" id="durMinutes" min="0" max="59" value="0">
+          <select id="durMinutes"></select>
         </div>
       </div>
 
@@ -127,6 +127,14 @@
   const summaryEl = document.getElementById('calcSummary');
   const copyBtn = document.getElementById('copyResultBtn');
   const copyToast = document.getElementById('copyToast');
+
+  // Populate minutes as clean 5-minute steps (0, 5, 10, ..., 55)
+  for(let m = 0; m <= 55; m += 5){
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = String(m).padStart(2,'0');
+    durMinutesEl.appendChild(opt);
+  }
 
   function fmt12(totalMinutes){
     const m = ((totalMinutes % 1440) + 1440) % 1440;
@@ -193,7 +201,7 @@
 
   startTimeEl.addEventListener('input', calculate);
   durHoursEl.addEventListener('input', calculate);
-  durMinutesEl.addEventListener('input', calculate);
+  durMinutesEl.addEventListener('change', calculate);
   copyBtn.addEventListener('click', copyResult);
 })();
 </script>

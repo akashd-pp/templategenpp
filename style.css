@@ -67,6 +67,23 @@ body{
   font-size:12px;
   color:#B7BEC9;
 }
+.topbar-right{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.topbar-tool-btn{
+  color:#F3F1EA;
+  border:1px solid var(--teal);
+  background:rgba(47,111,107,0.18);
+  font-size:12.5px;
+  font-weight:600;
+  padding:7px 13px;
+  border-radius:999px;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.topbar-tool-btn:hover{background:var(--teal);}
 
 /* Layout */
 .layout{
