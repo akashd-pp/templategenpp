@@ -348,7 +348,7 @@ textarea{resize:vertical;min-height:64px;line-height:1.5;}
 .stub-body strong{font-weight:700;}
 .stub-body table{
   white-space:normal;
-  margin:6px 0;
+  margin:2px 0;
 }
 .stub-body table th, .stub-body table td{
   white-space:normal;
@@ -425,3 +425,15 @@ textarea{resize:vertical;min-height:64px;line-height:1.5;}
   .stub{padding:18px 16px 0;}
   .stub-perf{margin:0 -16px;}
 }
+
+
+/* Mandatory fields, 24-hour time picker, disabled generate button */
+.req-star{color:var(--rust);font-weight:700;}
+.time24{display:flex;align-items:center;gap:6px;}
+.time24 select{flex:0 0 82px;width:82px;}
+.time24-sep{font-weight:700;color:var(--ink-soft);}
+.time24-hint{font-size:12px;color:var(--muted);margin-left:6px;font-family:var(--font-mono);white-space:nowrap;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-primary:disabled:hover{background:var(--teal);}
+.mandatory-hint{font-size:12.5px;color:var(--rust);margin:10px 0 0;max-width:720px;line-height:1.5;}
+.mandatory-hint.ok{color:var(--teal);}

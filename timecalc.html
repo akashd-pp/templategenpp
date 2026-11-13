@@ -89,8 +89,13 @@
   <main class="calc-layout">
     <div class="calc-card">
 
-      <label class="field-label" for="startTime">Start time</label>
-      <input type="time" id="startTime">
+      <label class="field-label" for="startH">Start time (24-hour)</label>
+      <div class="time24">
+        <select id="startH"></select>
+        <span class="time24-sep">:</span>
+        <select id="startM"></select>
+        <span class="time24-hint" id="startHint">24-hour</span>
+      </div>
 
       <div style="height:16px;"></div>
 
@@ -120,7 +125,9 @@
 
 <script>
 (function(){
-  const startTimeEl = document.getElementById('startTime');
+  const startHEl = document.getElementById('startH');
+  const startMEl = document.getElementById('startM');
+  const startHintEl = document.getElementById('startHint');
   const durHoursEl = document.getElementById('durHours');
   const minutesGrid = document.getElementById('minutesGrid');
   const resultBox = document.getElementById('calcResult');
@@ -143,17 +150,24 @@
     minuteInputs.push(input);
   }
 
-  function fmt12(totalMinutes){
+  function fmt24(totalMinutes){
     const m = ((totalMinutes % 1440) + 1440) % 1440;
-    let h = Math.floor(m / 60);
-    const min = m % 60;
-    const suffix = h >= 12 ? 'PM' : 'AM';
-    h = h % 12; if(h === 0) h = 12;
-    return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')} ${suffix}`;
+    return `${String(Math.floor(m / 60)).padStart(2,'0')}:${String(m % 60).padStart(2,'0')}`;
   }
 
+  // Populate the 24-hour start-time dropdowns (HH 00–23, MM 00–59)
+  (function(){
+    const pad = n => String(n).padStart(2,'0');
+    startHEl.innerHTML = '<option value="">HH</option>' + Array.from({length:24}, (_, i) => `<option value="${pad(i)}">${pad(i)}</option>`).join('');
+    startMEl.innerHTML = '<option value="">MM</option>' + Array.from({length:60}, (_, i) => `<option value="${pad(i)}">${pad(i)}</option>`).join('');
+  })();
+
   function calculate(){
-    const startVal = startTimeEl.value;
+    const startVal = (startHEl.value !== '' && startMEl.value !== '') ? `${startHEl.value}:${startMEl.value}` : '';
+    if(startHEl.value !== ''){
+      const hh = parseInt(startHEl.value, 10);
+      startHintEl.textContent = startMEl.value !== '' ? `= ${hh % 12 === 0 ? 12 : hh % 12}:${startMEl.value} ${hh >= 12 ? 'PM' : 'AM'}` : '24-hour';
+    } else { startHintEl.textContent = '24-hour'; }
     if(!startVal){
       resultBox.style.display = 'none';
       copyBtn.style.display = 'none';
@@ -168,8 +182,8 @@
     const endTotal = startTotal + durationTotal;
     const daysCrossed = Math.floor(endTotal / 1440);
 
-    const startFmt = fmt12(startTotal);
-    const endFmt = fmt12(endTotal);
+    const startFmt = fmt24(startTotal);
+    const endFmt = fmt24(endTotal);
 
     endTimeEl.textContent = endFmt;
     dayNoteEl.textContent = daysCrossed > 0
@@ -212,7 +226,8 @@
     document.body.removeChild(ta);
   }
 
-  startTimeEl.addEventListener('input', calculate);
+  startHEl.addEventListener('change', () => { if(startHEl.value !== '' && startMEl.value === '') startMEl.value = '00'; calculate(); });
+  startMEl.addEventListener('change', calculate);
   durHoursEl.addEventListener('input', calculate);
   minuteInputs.forEach(inp => inp.addEventListener('input', calculate));
   copyBtn.addEventListener('click', copyResult);

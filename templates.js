@@ -18,11 +18,10 @@ function fmtDate(iso){
   return `${d}/${m}/${y}`;
 }
 function fmtTime(t){
-  if(!t) return '--:-- --';
-  let [h,m] = t.split(':').map(Number);
-  const suffix = h >= 12 ? 'PM' : 'AM';
-  h = h % 12; if(h === 0) h = 12;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} ${suffix}`;
+  // 24-hour HH:MM output (no AM/PM) to avoid AM/PM mix-ups
+  if(!t) return '--:--';
+  const [h,m] = t.split(':').map(Number);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 }
 function val(v, fallback){
   return (v === undefined || v === null || v === '') ? (fallback ?? '____________') : v;
@@ -64,6 +63,9 @@ Physical Visit: Within 48–72 hours
 Outstation Visit: Within 72–120 hours
 
 Note: TAT is calculated from the time the ticket is assigned and all required information and prerequisites are complete. Delays due to merchant unavailability, rescheduling requests, public holidays, remote locations, unexpected emergencies or force majeure are excluded from the committed TAT.`;
+
+// Templates 1 and 7 carry one extra sentence in the source doc; Template 8 does not.
+const TAT_BODY_ONSITE = TAT_BODY + ' Onsite Visit TAT is subject to the real-time availability of resources at or near the outlet location.';
 
 const SUPPORT_LINE_NO_ACK =
 `We hope the session was informative. For any questions or further assistance, reach us any time on +91 79 6922 3344 (available 24×7) or support@petpooja.com.
@@ -202,7 +204,7 @@ function confirmationTableHtml(key, data){
   const tpl = getConfirmationTemplate(key);
   if(!tpl || !data) return '';
   const esc = escapeHtmlLocal;
-  const cellStyle = 'border:1px solid #999;padding:6px 9px;font-family:Arial,Helvetica,sans-serif;font-size:13px;text-align:left;';
+  const cellStyle = 'border:1px solid #999;padding:2px 6px;font-family:Times New Roman,Times,serif;font-size:12px;line-height:1.25;text-align:left;';
   const headStyle = (bg) => `${cellStyle}background:${bg};color:${contrastTextColor(bg)};font-weight:bold;`;
 
   const filledItemsOf = g => g.items.filter(item => (data[g.title + '|' + item] || {}).status);
@@ -222,7 +224,7 @@ function confirmationTableHtml(key, data){
       });
     });
     if(rows.length === 0) return '';
-    return `<table style="border-collapse:collapse;width:100%;margin:4px 0;">` +
+    return `<table style="border-collapse:collapse;width:100%;margin:2px 0;">` +
       `<tr>` +
       `<th style="${headStyle(tpl.headerColor)}">${esc(tpl.columnLabel)}</th>` +
       `<th style="${headStyle(tpl.headerColor)}">Item</th>` +
@@ -244,7 +246,7 @@ function confirmationTableHtml(key, data){
         `<td style="${cellStyle}">${esc(cell.remarks || '')}</td>` +
         `</tr>`;
     });
-    return `<table style="border-collapse:collapse;width:100%;margin:4px 0;">` +
+    return `<table style="border-collapse:collapse;width:100%;margin:2px 0;">` +
       `<tr><td colspan="3" style="${headStyle(tpl.headerColor)}text-align:center;">${esc(g.title)}</td></tr>` +
       `<tr>` +
       `<th style="${headStyle(tpl.subHeaderColor)}">Training Checklist Pointers</th>` +
@@ -265,7 +267,7 @@ function confirmationTableHtml(key, data){
         `<td style="${cellStyle}">${esc(cell.remarks || '')}</td>` +
         `</tr>`;
     });
-    return `<table style="border-collapse:collapse;width:100%;margin:4px 0;">` +
+    return `<table style="border-collapse:collapse;width:100%;margin:2px 0;">` +
       `<tr>` +
       `<th style="${headStyle(tpl.headerColor)}">${esc(g.title)}</th>` +
       `<th style="${headStyle(tpl.headerColor)}">Status</th>` +
@@ -313,7 +315,7 @@ const TEMPLATES = [
       plainLine('I acknowledge your training request and will connect with you shortly.'),
       plainLine(''),
       TAT_TITLE_LINE(),
-      plainLine(TAT_BODY)
+      plainLine(TAT_BODY_ONSITE)
     ]);
   }
 },
@@ -530,20 +532,27 @@ const TEMPLATES = [
     {id:'traineeContact', label:'Contact of trainee', type:'text'},
     {id:'ticketReceivedFrom', label:'Ticket received from', type:'select',
       options:['New Zoho Ticket','New Support Ticket','Centralized Query Sheet']},
-    {id:'trainingType', label:'Training type', type:'select', options:['New','Retraining','Support Issue']},
+    {id:'trainingType', label:'Training type', type:'select',
+      options:['New','Retraining','Support Issue','Only Installation','Retention','Other']},
+    {id:'otherTrainingType', label:'Specify training type', type:'text',
+      showIf:v => v.trainingType === 'Other'},
     {id:'retrainingReason', label:'Retraining / support issue reason', type:'textarea',
       showIf:v => v.trainingType === 'Retraining' || v.trainingType === 'Support Issue'},
     {id:'trainingMode', label:'Training mode', type:'select', options:['Physical','Virtual','Out of station']},
     {id:'product', label:'Product', type:'select',
-      options:['POS','Payroll','PP Invoice (Retail)','Reservation Manager','Purchase','Kharcha Pay','Other']},
+      options:['POSS','Payroll','PP Invoice (Retail)','Reservation Manager','Purchase','Kharcha Pay','TASKS','STEPS','Other']},
     {id:'subProduct', label:'Sub-product', type:'select',
+      showIf:v => v.product !== 'Payroll',
       options:['POS Basic','POS+Growth','POS+Scale','POSS+MP','Android POSS','Android POSS Lite',
-        'Touch POSS','Local-POS','Local POSS + Growth','Local POSS + Scale','Other']},
+        'Touch POSS','Local-POS','Local POSS + Growth','Local POSS + Scale','Other','NA']},
+    {id:'subProductPayroll', label:'Sub-product (Payroll)', type:'select',
+      showIf:v => v.product === 'Payroll',
+      options:['Attendo-DS','Attendo-Face','Attendo-Regular','Attendo-Cavli']},
     {id:'startTime', label:'Training start time', type:'time'},
     {id:'endTime', label:'Training end time', type:'time'},
     {id:'trainingStatus', label:'Training status', type:'radio', options:['Completed','Incomplete'], default:'Completed'},
     {id:'ownerDashboard', label:'Owner dashboard shown', type:'radio', options:['Yes','No'], default:'No'},
-    {id:'aiAgent', label:'AI Agent (Petpooja) shown', type:'radio', options:['Yes','No','Not interested'],
+    {id:'aiAgent', label:'AI Agent (Petpooja) shown', type:'radio', options:['Yes','No','Not interested','NA'],
       showIf:v => v.ownerDashboard === 'Yes' && v.product !== 'Payroll', hint:'Mandatory if Owner Dashboard = Yes; NA for Payroll'},
     {id:'attendedBy', label:'Training attended by', type:'checkboxGroup', options:['Owner','Manager','Staff']},
     {id:'parallelSetupDone', label:'Parallel setup done', type:'select', options:['Yes','No','NA']},
@@ -576,12 +585,13 @@ const TEMPLATES = [
       fieldLine('Name of Trainee', val(v.traineeName)),
       fieldLine('Contact of Trainee', val(v.traineeContact)),
       fieldLine('Ticket Received From', val(v.ticketReceivedFrom)),
-      fieldLine('Training Type', val(v.trainingType,'New')),
+      fieldLine('Training Type', (v.trainingType === 'Other' && v.otherTrainingType)
+        ? `Other — ${v.otherTrainingType}` : val(v.trainingType,'New')),
       line((v.trainingType === 'Retraining' || v.trainingType === 'Support Issue') && v.retrainingReason,
         fieldLine('Retraining Reason', v.retrainingReason)),
       fieldLine('Training Mode', modeText),
       fieldLine('Product', val(v.product)),
-      fieldLine('Sub-product', val(v.subProduct)),
+      fieldLine('Sub-product', val(v.product === 'Payroll' ? v.subProductPayroll : v.subProduct)),
       fieldLine('Training Start Time', fmtTime(v.startTime)),
       fieldLine('Training End Time', fmtTime(v.endTime)),
       fieldLine('Training Status', val(v.trainingStatus,'Completed')),
@@ -593,7 +603,7 @@ const TEMPLATES = [
       fieldLine('Parallel Setup Done', val(v.parallelSetupDone)),
       mixed(seg('Product Features Covered:', {bold:true, mark:'yellow'})),
       (featuresHtml && featuresPlain) ? tableLine(featuresPlain, featuresHtml) : plainLine('—'),
-      plainLine(''),
+      line(!(featuresHtml && featuresPlain), plainLine('')),
       line(v.marketplaceServices, mixed(hl(`Marketplace Services Covered: ${v.marketplaceServices}`))),
       line(v.marketplaceServices, plainLine('')),
       line(v.specialNote, boldLine(`Special Note / Instructions: ${v.specialNote}`)),
@@ -602,7 +612,7 @@ const TEMPLATES = [
       plainLine(''),
       plainLine('We also welcome your feedback — it helps us keep improving our service.'),
       plainLine(''),
-      mixed(hl('Feedback link: https://forms.gle/XXHMVTV8xxZH3AXg6'))
+      plainLine('Feedback link: https://forms.gle/XXHMVTV8xxZH3AXg6')
     ]);
   }
 },
@@ -641,7 +651,7 @@ const TEMPLATES = [
       mixed('Please update us once these are complete. ', hl('(Tag the respective Sales POC.)')),
       plainLine(''),
       TAT_TITLE_LINE(),
-      plainLine(TAT_BODY)
+      plainLine(TAT_BODY_ONSITE)
     ]);
   }
 },
@@ -830,3 +840,22 @@ const TEMPLATES = [
 }
 
 ];
+
+// ---------------------------------------------------------
+// Mandatory fields per template. A field only counts while it is visible.
+// Edit these lists to change what must be filled before "Generate & Copy" unlocks.
+const REQUIRED_FIELDS = {
+  t2: ['date','time'],
+  t3: ['call1Date','call1Time'],
+  t5: ['setupDate','restaurantId','restaurantName','userType','traineeName','traineeContact',
+       'product','subProduct','startTime','endTime'],
+  t6: ['date','restaurantId','restaurantName','userType','traineeName','traineeContact',
+       'trainingType','otherTrainingType','retrainingReason','trainingMode','ticketReceivedFrom',
+       'product','subProduct','subProductPayroll','confirmationTemplate','startTime','endTime',
+       'trainingStatus','ownerDashboard','aiAgent','attendedBy'],
+  t9: ['trainingDate','startTime','completedTime']
+};
+TEMPLATES.forEach(t => (REQUIRED_FIELDS[t.id] || []).forEach(id => {
+  const f = t.fields.find(x => x.id === id);
+  if(f) f.required = true;
+}));

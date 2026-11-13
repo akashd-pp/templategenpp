@@ -15,6 +15,7 @@
   const resetBtn = document.getElementById('resetBtn');
   const copyToast = document.getElementById('copyToast');
   const clock = document.getElementById('clock');
+  const mandatoryHint = document.getElementById('mandatoryHint');
 
   let state = { templateId: ALL_TEMPLATES[0].id, values: {} };
 
@@ -86,6 +87,13 @@
       label.className = 'field-label';
       label.textContent = field.label;
       label.htmlFor = 'f_' + field.id;
+      if(field.required){
+        const star = document.createElement('span');
+        star.className = 'req-star';
+        star.textContent = ' *';
+        star.title = 'Mandatory';
+        label.appendChild(star);
+      }
       group.appendChild(label);
 
       switch(field.type){
@@ -132,16 +140,52 @@
         }
 
         case 'time': {
-          const input = document.createElement('input');
-          input.type = 'time';
-          input.id = 'f_' + field.id;
-          input.value = state.values[field.id] || '';
-          input.addEventListener('change', e => {
-            state.values[field.id] = e.target.value;
-            renderForm();
+          // 24-hour picker: two dropdowns (HH 00–23, MM 00–59) so there is no AM/PM to get wrong.
+          const pad = n => String(n).padStart(2, '0');
+          const wrap = document.createElement('div');
+          wrap.className = 'time24';
+          const hSel = document.createElement('select');
+          hSel.id = 'f_' + field.id + '_h';
+          hSel.setAttribute('aria-label', field.label + ' — hour, 00 to 23');
+          const mSel = document.createElement('select');
+          mSel.id = 'f_' + field.id + '_m';
+          mSel.setAttribute('aria-label', field.label + ' — minute, 00 to 59');
+          hSel.innerHTML = '<option value="">HH</option>' +
+            Array.from({length:24}, (_, i) => `<option value="${pad(i)}">${pad(i)}</option>`).join('');
+          mSel.innerHTML = '<option value="">MM</option>' +
+            Array.from({length:60}, (_, i) => `<option value="${pad(i)}">${pad(i)}</option>`).join('');
+          const cur = (state.values[field.id] || '').split(':');
+          hSel.value = cur[0] || '';
+          mSel.value = cur[1] || '';
+          const sep = document.createElement('span');
+          sep.className = 'time24-sep';
+          sep.textContent = ':';
+          const hint = document.createElement('span');
+          hint.className = 'time24-hint';
+          const showHint = () => {
+            const v = state.values[field.id];
+            if(!v){ hint.textContent = '24-hour'; return; }
+            const [hh, mm] = v.split(':').map(Number);
+            const h12 = hh % 12 === 0 ? 12 : hh % 12;
+            hint.textContent = `= ${h12}:${pad(mm)} ${hh >= 12 ? 'PM' : 'AM'}`;
+          };
+          const sync = () => {
+            state.values[field.id] = (hSel.value !== '' && mSel.value !== '') ? `${hSel.value}:${mSel.value}` : '';
+            showHint();
             renderPreview();
+          };
+          hSel.addEventListener('change', () => {
+            if(hSel.value !== '' && mSel.value === '') mSel.value = '00';
+            sync();
           });
-          group.appendChild(input);
+          mSel.addEventListener('change', sync);
+          label.htmlFor = hSel.id;
+          wrap.appendChild(hSel);
+          wrap.appendChild(sep);
+          wrap.appendChild(mSel);
+          wrap.appendChild(hint);
+          group.appendChild(wrap);
+          showHint();
           break;
         }
 
@@ -365,7 +409,13 @@
     // For the on-screen <pre> preview, a \n-joined string is fine for normal
     // lines (CSS white-space:pre-wrap handles it); table lines insert their
     // HTML <table> directly, no \n join needed around it.
-    const previewHtml = lines.map(l => l.__table ? l.html : segmentsToHtml(l)).join('\n');
+    const prevParts = lines.map(l => ({ isTable: !!l.__table, html: l.__table ? l.html : segmentsToHtml(l) }));
+    let previewHtml = '';
+    prevParts.forEach((p, i) => {
+      previewHtml += p.html;
+      const next = prevParts[i + 1];
+      if(next && !p.isTable && !next.isTable) previewHtml += '\n';   // tables are blocks; no spacer line around them
+    });
 
     // For the clipboard, mail clients ignore bare \n between text nodes — each
     // normal line needs to be its own block element or everything collapses
@@ -391,6 +441,42 @@
     previewBody.innerHTML = previewHtml;
     previewBody.dataset.plain = plain;
     previewBody.dataset.clipboardHtml = clipboardHtml;
+    updateGenerateState();
+  }
+
+  function fieldHasValue(field, values){
+    const v = values[field.id];
+    switch(field.type){
+      case 'checkboxGroup': return Array.isArray(v) && v.length > 0;
+      case 'checkbox': return !!v;
+      case 'checklist':
+      case 'checklistGroups': return !!v && Object.values(v).some(x => x && (x.status || (typeof x === 'string' && x)));
+      default: return v !== undefined && v !== null && String(v).trim() !== '';
+    }
+  }
+
+  function missingRequired(){
+    const tpl = currentTemplate();
+    return (tpl.fields || []).filter(f => f.required && isVisible(f, state.values) && !fieldHasValue(f, state.values));
+  }
+
+  function updateGenerateState(){
+    const tpl = currentTemplate();
+    const hasRequired = (tpl.fields || []).some(f => f.required);
+    const missing = missingRequired();
+    copyBtn.disabled = missing.length > 0;
+    if(!mandatoryHint) return;
+    if(!hasRequired){
+      mandatoryHint.textContent = '';
+      mandatoryHint.className = 'mandatory-hint';
+    } else if(missing.length){
+      const names = missing.slice(0, 4).map(f => f.label.replace(/\s*—.*$/, ''));
+      mandatoryHint.textContent = `Mandatory fields (*) remaining: ${missing.length} — ${names.join(', ')}${missing.length > 4 ? '…' : ''}`;
+      mandatoryHint.className = 'mandatory-hint';
+    } else {
+      mandatoryHint.textContent = 'All mandatory fields filled — ready to generate.';
+      mandatoryHint.className = 'mandatory-hint ok';
+    }
   }
 
   function selectTemplate(id){
@@ -402,6 +488,7 @@
   }
 
   function copyToClipboard(){
+    if(missingRequired().length) return;
     const plainText = previewBody.dataset.plain || previewBody.textContent;
     const htmlText = `<div style="font-family:'Times New Roman', Times, serif;">${previewBody.dataset.clipboardHtml || previewBody.innerHTML}</div>`;
     const done = () => {

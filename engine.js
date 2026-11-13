@@ -21,11 +21,10 @@ function engineFmtDate(iso){
   return `${d}/${m}/${y}`;
 }
 function engineFmtTime(t){
-  if(!t) return '--:-- --';
-  let [h,m] = t.split(':').map(Number);
-  const suffix = h >= 12 ? 'PM' : 'AM';
-  h = h % 12; if(h === 0) h = 12;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} ${suffix}`;
+  // 24-hour HH:MM output (no AM/PM)
+  if(!t) return '--:--';
+  const [h,m] = t.split(':').map(Number);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 }
 
 function engineGetField(template, id){
